@@ -40,13 +40,14 @@ export const startSqsConsumer = async () => {
 
                         console.log(`Message processed and deleted: ${message.MessageId}`);
                     } catch (err) {
-                        console.error("Message processing failed:", err);
                         // Burada DLQ yönlendirme eklenebilir
+                        throw err;
                     }
                 }
             }
         } catch (err) {
             console.error("Error receiving messages from SQS:", err);
+            throw err;
         }
     }
 };
