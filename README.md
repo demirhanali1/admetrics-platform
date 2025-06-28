@@ -168,3 +168,38 @@ Gerçek dünyada ise, bu veritabanları aşağıdaki AWS servislerinde koşması
 
 Bu yapı sayesinde, hem esnek veri modelleme hem de güçlü sorgu yetenekleri elde edilir. Geliştirme ortamında Docker ile çalışmak, mimariyi test etmek ve CI/CD süreçlerini otomatize etmek için yeterlidir.
 
+# Metrik Hesaplama Stratejileri
+
+1. Gerçek Zamanlı (Real-time) Hesaplama
+   - Kullanım: Anlık dashboard'lar, alarmlar, kritik karar verme
+   - Sıklık: Her 5 dakikada bir otomatik + istek üzerine anında
+   - Avantajlar: En güncel veri, anlık tepki
+   - Dezavantajlar: Yüksek CPU kullanımı
+2. Toplu (Batch) Hesaplama
+   - Kullanım: Raporlama, analiz, geçmiş veri işleme
+   - Sıklık: Her 15 dakikada bir otomatik
+   - Avantajlar: Düşük sistem yükü, yüksek verimlilik
+   - Dezavantajlar: 15 dakika veri gecikmesi
+3. Önbellekli (Cached) Hesaplama
+   - Kullanım: Sık erişilen veriler, dashboard'lar
+   - Sıklık: 5 dakika TTL ile önbellek
+   - Avantajlar: Hızlı yanıt, düşük sistem yükü
+4. Tarihsel Yeniden Hesaplama
+   - Kullanım: Veri doğruluğu, düzeltmeler
+   - Sıklık: Her 2 saatte bir
+   - Avantajlar: Veri tutarlılığı, hata düzeltme
+
+Hesaplanması Gereken Metrikler
+
+   Temel Metrikler:
+
+   - CTR: (Clicks / Impressions) * 100
+   - CPM: (Spend / Impressions) * 1000
+   - CPC: Spend / Clicks
+   - CPA: Spend / Conversions
+   - ROAS: Revenue / Spend
+
+   Gelişmiş Metrikler:
+
+   Conversion Rate, Revenue Per Click, Revenue Per Impression
+
