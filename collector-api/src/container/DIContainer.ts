@@ -18,7 +18,6 @@ export class DIContainer {
   }
 
   private initializeServices(): void {
-    // Initialize services in dependency order
     const messageQueueService = new SQSMessageQueueService();
     const eventService = new EventService(messageQueueService);
     const eventController = new EventController(eventService);
@@ -47,4 +46,4 @@ export class DIContainer {
   getMessageQueueService(): SQSMessageQueueService {
     return this.get<SQSMessageQueueService>('messageQueueService');
   }
-} 
+}
