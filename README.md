@@ -202,3 +202,51 @@ Hesaplanması Gereken Metrikler
 
    Conversion Rate, Revenue Per Click, Revenue Per Impression
 
+# Loglama ve Monitoring Stratejisi
+
+## Genel Yaklaşım
+
+Mikroservis mimarisinde her servis (ingestion-api, normalizer-worker, diğer servisler) ayrı EC2 instance'larında çalışmalıdır. Bu durumda merkezi loglama ve monitoring kritik önemdedir.
+
+## AWS Loglama Servisleri
+1. CloudWatch Logs (Ana Loglama Platformu)
+
+   Kullanım: Tüm uygulama loglarının merkezi toplanması
+
+   Avantajlar:
+   - Otomatik log gruplandırma
+   - Real-time log analizi
+   - Log retention policies
+   - Metric extraction
+   - Maliyet: GB başına ücretlendirme
+2. CloudWatch Metrics (Performans Monitoring)
+
+   Kullanım: Custom metrikler, sistem metrikleri
+
+   Avantajlar:
+   - Real-time dashboard
+   - Alarm kurulumu
+   - Auto-scaling triggers
+   - Metrikler: CPU, Memory, Network, Custom metrikler
+
+## Log Mimarisi
+
+1. Application Logs (Winston → CloudWatch)
+   - Error logs
+   - Info logs
+   - Debug logs
+   - Performance metrics
+2. Access Logs (Express → CloudWatch)
+   - HTTP request/response
+   - API endpoint usage
+   - Rate limiting events
+3. System Logs (OS → CloudWatch)
+   - EC2 system metrics
+   - Docker container logs
+   - Health check results
+4. Business Logs (Custom → CloudWatch)
+   - Event processing metrics
+   - SQS message handling
+
+
+
