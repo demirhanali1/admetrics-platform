@@ -1,5 +1,5 @@
 import { Event, EventService as IEventService, EventValidator, MessageQueueService, SQSMessageResult } from '../types/Event';
-import { EventValidator as EventValidatorClass } from '../validators/EventValidator';
+import { EventValidator as EventValidatorClass } from '../validators/eventValidator';
 
 export class EventService implements IEventService {
   private readonly validator: EventValidator;
@@ -12,7 +12,7 @@ export class EventService implements IEventService {
 
   async processEvent(event: Event): Promise<SQSMessageResult> {
     const validation = this.validator.validate(event);
-    
+
     if (!validation.isValid) {
       return {
         messageId: '',
@@ -32,4 +32,4 @@ export class EventService implements IEventService {
       };
     }
   }
-} 
+}
