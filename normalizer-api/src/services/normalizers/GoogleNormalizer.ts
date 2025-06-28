@@ -1,7 +1,8 @@
-import { EventNormalizer, NormalizedEvent, EventPayload } from '../../types/Event';
+import { EventNormalizer, NormalizedEvent, RawEvent } from '../../types/Event';
 
 export class GoogleNormalizer implements EventNormalizer {
-  normalize(payload: EventPayload): NormalizedEvent {
+  normalize(event: RawEvent): NormalizedEvent {
+    const payload = event.payload;
     const campaign = payload.campaign as Record<string, unknown>;
     const metrics = payload.metrics as Record<string, unknown>;
 

@@ -6,6 +6,7 @@ import { NormalizedEvent as NormalizedEventEntity } from '../../entity/Normalize
 export class PostgreSQLService implements DatabaseService {
   private dataSource: DataSource;
   private repository!: Repository<NormalizedEventEntity>;
+  private static instance: PostgreSQLService;
 
   constructor() {
     const config = Config.getInstance().getConfig();
@@ -19,15 +20,50 @@ export class PostgreSQLService implements DatabaseService {
       database: config.database.postgres.database,
       entities: [NormalizedEventEntity],
       synchronize: config.app.nodeEnv === 'development',
-      logging: config.app.nodeEnv === 'development',
+      // High-performance connection pooling for 100M events/day
+      extra: {
+        // Connection pool settings optimized for high throughput
+        max: 50, // Increased for high concurrency
+        min: 10, // More minimum connections
+        idleTimeoutMillis: 60000, // Longer idle timeout
+        connectionTimeoutMillis: 5000, // Faster connection timeout
+        query_timeout: 30000, // Longer query timeout for batch operations
+        statement_timeout: 30000,
+        // SSL for production
+        ssl: config.app.nodeEnv === 'production' ? { rejectUnauthorized: false } : false,
+        // Performance optimizations
+        application_name: 'normalizer-api',
+        // Disable automatic prepared statements for better performance
+        prepare: false,
+        // Optimize for bulk operations
+        binary: true,
+      },
+      // Larger pool size for high throughput
+      poolSize: 50,
+      // Minimal logging for performance
+      logging: config.app.nodeEnv === 'development' ? ['error'] : false,
+      // Disable migrations for performance
+      migrationsRun: false,
+      // Disable subscribers for performance
+      subscribers: [],
     });
+  }
+
+  // Singleton pattern for connection reuse
+  static getInstance(): PostgreSQLService {
+    if (!PostgreSQLService.instance) {
+      PostgreSQLService.instance = new PostgreSQLService();
+    }
+    return PostgreSQLService.instance;
   }
 
   async connect(): Promise<void> {
     try {
-      await this.dataSource.initialize();
-      this.repository = this.dataSource.getRepository(NormalizedEventEntity);
-      console.log('PostgreSQL connected successfully');
+      if (!this.dataSource.isInitialized) {
+        await this.dataSource.initialize();
+        this.repository = this.dataSource.getRepository(NormalizedEventEntity);
+        console.log('PostgreSQL connected successfully with high-performance pooling');
+      }
     } catch (error) {
       console.error('PostgreSQL connection failed:', error);
       throw error;
@@ -36,12 +72,28 @@ export class PostgreSQLService implements DatabaseService {
 
   async disconnect(): Promise<void> {
     try {
-      await this.dataSource.destroy();
-      console.log('PostgreSQL disconnected successfully');
+      if (this.dataSource.isInitialized) {
+        await this.dataSource.destroy();
+        console.log('PostgreSQL disconnected successfully');
+      }
     } catch (error) {
       console.error('PostgreSQL disconnection failed:', error);
       throw error;
     }
+  }
+
+  // Get connection pool status for monitoring
+  getConnectionPoolStatus() {
+    if (!this.dataSource.isInitialized) {
+      return { connected: false, poolSize: 0, activeConnections: 0 };
+    }
+
+    const driver = this.dataSource.driver as any;
+    return {
+      connected: this.dataSource.isInitialized,
+      poolSize: driver.pool ? driver.pool.size : 0,
+      activeConnections: driver.pool ? driver.pool.length : 0,
+    };
   }
 
   async saveRawEvent(): Promise<DatabaseResult> {
@@ -81,6 +133,104 @@ export class PostgreSQLService implements DatabaseService {
         success: false,
         error: errorMessage
       };
+    }
+  }
+
+  // High-performance batch save for 100M events/day
+  async saveNormalizedEvents(events: NormalizedEvent[]): Promise<DatabaseResult[]> {
+    try {
+      if (!this.repository) {
+        throw new Error('Database not connected');
+      }
+
+      // Use bulk insert for maximum performance
+      const entities = events.map((event: NormalizedEvent) => {
+        const entity = new NormalizedEventEntity();
+        entity.unified_campaign_id = event.unified_campaign_id;
+        entity.campaign_name = event.campaign_name;
+        entity.source_platform = event.source_platform;
+        entity.event_date = event.event_date;
+        entity.impressions = event.impressions;
+        entity.clicks = event.clicks;
+        entity.spend = event.spend;
+        entity.conversions = event.conversions;
+        return entity;
+      });
+
+      // Use bulk insert with chunking for large batches
+      const chunkSize = 1000; // Optimal chunk size for PostgreSQL
+      const results: DatabaseResult[] = [];
+
+      for (let i = 0; i < entities.length; i += chunkSize) {
+        const chunk = entities.slice(i, i + chunkSize);
+        const savedEvents = await this.repository.save(chunk, { 
+          chunk: chunkSize,
+          reload: false, // Don't reload entities for performance
+        });
+
+        results.push(...savedEvents.map(event => ({
+          success: true,
+          id: event.id.toString()
+        })));
+      }
+
+      return results;
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      console.error('Failed to batch save normalized events to PostgreSQL:', error);
+
+      return events.map(() => ({
+        success: false,
+        error: errorMessage
+      }));
+    }
+  }
+
+  // Ultra-fast bulk insert using raw SQL for maximum performance
+  async bulkInsertNormalizedEvents(events: NormalizedEvent[]): Promise<DatabaseResult[]> {
+    try {
+      if (!this.dataSource.isInitialized) {
+        throw new Error('Database not connected');
+      }
+
+      const queryRunner = this.dataSource.createQueryRunner();
+      await queryRunner.connect();
+      await queryRunner.startTransaction();
+
+      try {
+        // Prepare bulk insert values
+        const values = events.map(event => 
+          `('${event.unified_campaign_id}', '${event.campaign_name}', '${event.source_platform}', '${event.event_date}', ${event.impressions}, ${event.clicks}, ${event.spend}, ${event.conversions})`
+        ).join(',');
+
+        const sql = `
+          INSERT INTO normalized_events 
+          (unified_campaign_id, campaign_name, source_platform, event_date, impressions, clicks, spend, conversions)
+          VALUES ${values}
+          ON CONFLICT DO NOTHING
+        `;
+
+        await queryRunner.query(sql);
+        await queryRunner.commitTransaction();
+
+        return events.map(() => ({
+          success: true,
+          id: 'bulk-inserted'
+        }));
+      } catch (error) {
+        await queryRunner.rollbackTransaction();
+        throw error;
+      } finally {
+        await queryRunner.release();
+      }
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      console.error('Failed to bulk insert normalized events:', error);
+
+      return events.map(() => ({
+        success: false,
+        error: errorMessage
+      }));
     }
   }
 }

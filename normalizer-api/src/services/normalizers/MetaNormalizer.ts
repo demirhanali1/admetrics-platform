@@ -1,7 +1,8 @@
-import { EventNormalizer, NormalizedEvent, EventPayload } from '../../types/Event';
+import { EventNormalizer, NormalizedEvent, RawEvent } from '../../types/Event';
 
 export class MetaNormalizer implements EventNormalizer {
-  normalize(payload: EventPayload): NormalizedEvent {
+  normalize(event: RawEvent): NormalizedEvent {
+    const payload = event.payload;
     // Meta payload structure
     const campaignId = payload.campaign_id as string;
     const campaignName = payload.campaign_name as string;

@@ -47,15 +47,25 @@ export interface MessageProcessor {
   process(messageBody: string): Promise<void>;
 }
 
+export interface ConnectionPoolStatus {
+  connected: boolean;
+  poolSize: number;
+  activeConnections: number;
+  readyState?: number;
+}
+
 export interface DatabaseService {
   saveRawEvent(event: RawEvent): Promise<DatabaseResult>;
   saveNormalizedEvent(event: NormalizedEvent): Promise<DatabaseResult>;
+  saveRawEvents?(events: RawEvent[]): Promise<DatabaseResult[]>;
+  saveNormalizedEvents?(events: NormalizedEvent[]): Promise<DatabaseResult[]>;
   connect(): Promise<void>;
   disconnect(): Promise<void>;
+  getConnectionPoolStatus?(): ConnectionPoolStatus;
 }
 
 export interface EventNormalizer {
-  normalize(payload: EventPayload): NormalizedEvent;
+  normalize(event: RawEvent): NormalizedEvent;
 }
 
 export interface EventNormalizerFactory {
@@ -63,7 +73,19 @@ export interface EventNormalizerFactory {
 }
 
 export interface EventProcessor {
-  processEvent(event: RawEvent): Promise<void>;
+  processEvent(event: RawEvent): Promise<boolean>;
+  initialize(): Promise<void>;
+  shutdown(): Promise<void>;
+  getSuccessRate(): number;
+  getMetrics(): {
+    processedCount: number;
+    errorCount: number;
+    successRate: number;
+    batchSize: number;
+    pendingBatchSize: number;
+    concurrentBatches?: number;
+    eventsPerSecond?: number;
+  };
 }
 
 export interface SQSClientWrapper {

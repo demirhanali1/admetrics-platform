@@ -50,11 +50,9 @@
 
 - Ham veriyi MongoDB’ye, normalize veriyi PostgreSQL’e kaydeder.
 
-### Teknik Detay
-
 Normalizer API, yüksek trafik altında dahi güvenilir, kararlı ve ölçeklenebilir çalışacak şekilde optimize edilmiştir. Sistemin hedefi, günlük 100 milyon eventi sorunsuz bir şekilde işleyebilmek, veri tutarlılığını korumak ve SQS kuyruğundaki yükü hızlıca boşaltarak sistemin darboğaza girmesini önlemektir.
 
-**Yapılan başlıca performans iyileştirmeleri şunlardır**
+### SQS Performans Optimizasyonu
 
 **Concurrent Processing Architecture (Eşzamanlı İşleme Mimarisi)**
 
@@ -114,6 +112,29 @@ results.forEach((result, index) => {
     }
 });
 ```
+
+### PostgreSQL Performans Optimizasyonu
+
+- Daha uzun idle ve query timeout için Connection pool ayarları artırıldı (max: 50, min: 10)
+- Batch insert (toplu kayıt) desteği: 1000'lik chunk'lar halinde toplu kayıt yapılabiliyor.
+- Gerekirse ultra-hızlı bulk insert için raw SQL ile toplu ekleme fonksiyonu.
+- Logging ve gereksiz TypeORM özellikleri (migrations, subscribers) devre dışı bırakıldı.
+- Singleton pattern ile bağlantı tekrar kullanılacak şekilde ayarlandı.
+
+### MongoDB Performans Optimizasyonu
+
+- Connection pool ayarları artırıldı (maxPoolSize: 100, minPoolSize: 20).
+- insertMany ile batch kayıt desteği eklendi (5000'lik batch'ler).
+- Mongoose schema'da otomatik index ve validation kapatıldı, writeConcern optimize edildi.
+- Gerekirse native MongoDB bulkWrite ile ultra-hızlı toplu ekleme fonksiyonu.
+- Singleton pattern ile bağlantı tekrar kullanılacak şekilde ayarlandı.
+
+### EventProcessor Optimizasyonu
+
+- Batch size sayısı 1000. Aynı anda 5 batch paralel işlenebiliyor.
+- Her batch işlenmesi asenkron ve in-memory queue ile yönetiliyor (gerçek dünyada redis kullanılmalıdır).
+- Her batch'te MongoDB'ye toplu yazma, ardından normalize edip PostgreSQL'e toplu yazma yapılıyor.
+- Performans metrikleri ve connection pool durumu loglanıyor.
 
 # Veritabanı Mimarisi
 
