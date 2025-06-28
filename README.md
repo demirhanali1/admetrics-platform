@@ -1,13 +1,12 @@
 # Teknoloji
 
-- Node.js
-- Express.js
+- Typescript
+- Node.js, Express.js
 - Docker
 - AWS
 - PostgreSQL, TypeORM
 - MongoDB, mongoose
-- SOLID
-- Github Actions
+- SOLID Prensipleri
 
 # AWS Bileşenleri
 
@@ -36,7 +35,7 @@
 
 - Mesajları tek tek göndermek yerine batch halinde gönderiyoruz
 - SQS limiti olan 10 mesaj per batch kullanıyoruz
-- 1 saniye flush interval ile otomatik batch gönderimi
+- 1 saniye flush interval ile otomatik batch gönderimi yapılıyor
 - Network overhead'i %90 azaltıyor
 
 ### Express.js Optimizasyonu
@@ -51,7 +50,7 @@
 
 - Thread pool size 64'e çıkarıldı
 - Max listeners limiti kaldırıldı
-- Memory usage monitoring
+- Memory usage monitoring yapılıyor
 
 ## 2. Normalizer Api
 
@@ -166,7 +165,7 @@ Gerçek dünyada ise, bu veritabanları aşağıdaki AWS servislerinde koşması
 
 - Amazon DocumentDB (MongoDB): Farklı kaynaklardan gelen ham verilerin (raw payload) saklanması.
 
-Bu yapı sayesinde, hem esnek veri modelleme hem de güçlü sorgu yetenekleri elde edilir. Geliştirme ortamında Docker ile çalışmak, mimariyi test etmek ve CI/CD süreçlerini otomatize etmek için yeterlidir.
+Bu yapı sayesinde, hem esnek veri modelleme hem de güçlü sorgu yetenekleri elde edilir.
 
 # Metrik Hesaplama Stratejileri
 
