@@ -6,8 +6,8 @@ export class SQSMessageQueueService implements MessageQueueService {
   private readonly sqsClient: SQSClient;
   private readonly queueUrl: string;
   private messageBatch: Event[] = [];
-  private batchSize = 10; // SQS batch limit
-  private flushInterval = 1000; // 1 second
+  private batchSize = 10;
+  private flushInterval = 1000;
   private flushTimer: NodeJS.Timeout | null = null;
 
   constructor() {
@@ -19,15 +19,12 @@ export class SQSMessageQueueService implements MessageQueueService {
         accessKeyId: config.aws.accessKeyId,
         secretAccessKey: config.aws.secretAccessKey,
       },
-      // Performance optimizations for high throughput
-      maxAttempts: 3, // Retry failed requests
+      maxAttempts: 3,
       requestHandler: {
-        // Optimize for high concurrency
         maxConcurrentRequests: 50,
       },
     });
 
-    // Start periodic flush timer
     this.startFlushTimer();
   }
 
@@ -47,30 +44,26 @@ export class SQSMessageQueueService implements MessageQueueService {
       await this.sendMessageBatch(batch);
     } catch (error) {
       console.error('Failed to flush message batch:', error);
-      // Re-add messages to batch for retry
       this.messageBatch.unshift(...batch);
     }
   }
 
   async sendMessage(message: Event): Promise<SQSMessageResult> {
     try {
-      // Add message to batch
       this.messageBatch.push(message);
 
-      // If batch is full, send immediately
       if (this.messageBatch.length >= this.batchSize) {
         const batch = [...this.messageBatch];
         this.messageBatch = [];
-        
+
         const results = await this.sendMessageBatch(batch);
         const messageIndex = batch.findIndex(msg => msg === message);
-        
+
         if (messageIndex >= 0 && results[messageIndex]) {
           return results[messageIndex];
         }
       }
 
-      // Return immediate success for batched messages
       return {
         messageId: `batched-${Date.now()}-${Math.random()}`,
         success: true
@@ -78,7 +71,7 @@ export class SQSMessageQueueService implements MessageQueueService {
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       console.error('Failed to send message to SQS:', error);
-      
+
       return {
         messageId: '',
         success: false,
@@ -89,7 +82,6 @@ export class SQSMessageQueueService implements MessageQueueService {
 
   private async sendMessageBatch(messages: Event[]): Promise<SQSMessageResult[]> {
     try {
-      // Split into SQS batch chunks (max 10 messages per batch)
       const chunks = this.chunkArray(messages, 10);
       const allResults: SQSMessageResult[] = [];
 
@@ -105,7 +97,6 @@ export class SQSMessageQueueService implements MessageQueueService {
         const command = new SendMessageBatchCommand(batchParams);
         const result = await this.sqsClient.send(command);
 
-        // Map successful results
         const chunkResults: SQSMessageResult[] = chunk.map((_, index) => {
           const entry = result.Successful?.find(s => s.Id === `msg-${Date.now()}-${index}`);
           if (entry) {
@@ -130,7 +121,7 @@ export class SQSMessageQueueService implements MessageQueueService {
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       console.error('Failed to send message batch to SQS:', error);
-      
+
       return messages.map(() => ({
         messageId: '',
         success: false,
@@ -147,7 +138,6 @@ export class SQSMessageQueueService implements MessageQueueService {
     return chunks;
   }
 
-  // Configuration methods for runtime tuning
   setBatchSize(size: number): void {
     this.batchSize = Math.max(1, Math.min(10, size)); // SQS limit is 10
     console.log(`SQS batch size updated to: ${this.batchSize}`);
@@ -162,15 +152,13 @@ export class SQSMessageQueueService implements MessageQueueService {
     console.log(`SQS flush interval updated to: ${interval}ms`);
   }
 
-  // Graceful shutdown
   async shutdown(): Promise<void> {
     if (this.flushTimer) {
       clearInterval(this.flushTimer);
     }
-    
-    // Flush any remaining messages
+
     if (this.messageBatch.length > 0) {
       await this.flushBatch();
     }
   }
-} 
+}

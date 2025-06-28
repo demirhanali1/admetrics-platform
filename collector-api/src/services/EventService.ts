@@ -16,7 +16,7 @@ export class EventService implements IEventService {
 
   async processEvent(event: Event): Promise<SQSMessageResult> {
     const startTime = Date.now();
-    
+
     try {
       const validation = this.validator.validate(event);
 
@@ -31,13 +31,13 @@ export class EventService implements IEventService {
       }
 
       const result = await this.messageQueueService.sendMessage(event);
-      
+
       if (result.success) {
         this.processedCount++;
       } else {
         this.errorCount++;
       }
-      
+
       this.logMetrics(startTime);
       return result;
     } catch (error) {
@@ -55,14 +55,13 @@ export class EventService implements IEventService {
   private logMetrics(startTime: number): void {
     const now = Date.now();
     const timeSinceLastLog = now - this.lastLogTime;
-    
-    // Log every 1000 events or every 30 seconds for high throughput
+
     if (this.processedCount % 1000 === 0 || timeSinceLastLog >= 30000) {
       const processingTime = now - startTime;
       const successRate = this.getSuccessRate();
       const eventsPerSecond = this.calculateEventsPerSecond();
-      const uptime = (now - this.startTime) / 1000; // seconds
-      
+      const uptime = (now - this.startTime) / 1000;
+
       console.log(`Collector API High-Throughput Metrics:
         - Processed: ${this.processedCount.toLocaleString()}
         - Errors: ${this.errorCount.toLocaleString()}
@@ -71,14 +70,14 @@ export class EventService implements IEventService {
         - Uptime: ${uptime.toFixed(0)}s
         - Last Event Processing Time: ${processingTime}ms
       `);
-      
+
       this.lastLogTime = now;
     }
   }
 
   private calculateEventsPerSecond(): number {
     const now = Date.now();
-    const uptime = (now - this.startTime) / 1000; // seconds
+    const uptime = (now - this.startTime) / 1000;
     return uptime > 0 ? this.processedCount / uptime : 0;
   }
 
@@ -90,7 +89,7 @@ export class EventService implements IEventService {
   getMetrics() {
     const now = Date.now();
     const uptime = (now - this.startTime) / 1000;
-    
+
     return {
       processedCount: this.processedCount,
       errorCount: this.errorCount,
@@ -101,15 +100,13 @@ export class EventService implements IEventService {
     };
   }
 
-  // Graceful shutdown
   async shutdown(): Promise<void> {
     console.log('Shutting down EventService...');
-    
-    // Shutdown message queue service
+
     if (this.messageQueueService && typeof (this.messageQueueService as any).shutdown === 'function') {
       await (this.messageQueueService as any).shutdown();
     }
-    
+
     console.log('EventService shutdown completed');
   }
 }
