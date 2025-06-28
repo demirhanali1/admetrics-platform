@@ -62,7 +62,7 @@ export class EventService implements IEventService {
       const eventsPerSecond = this.calculateEventsPerSecond();
       const uptime = (now - this.startTime) / 1000;
 
-      console.log(`Collector API High-Throughput Metrics:
+      console.log(`Ingestion API High-Throughput Metrics:
         - Processed: ${this.processedCount.toLocaleString()}
         - Errors: ${this.errorCount.toLocaleString()}
         - Success Rate: ${successRate.toFixed(2)}%

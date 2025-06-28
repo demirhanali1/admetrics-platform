@@ -6,7 +6,7 @@ config();
 
 (async () => {
     try {
-        console.log("Normalizer API starting...");
+        console.log("Normalizer Worker starting...");
 
         // Get services from DI container
         const container = DIContainer.getInstance();
@@ -20,7 +20,7 @@ config();
         await sqsConsumer.startConsuming();
     } catch (error) {
         const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-        console.error("Failed to start Normalizer API:", errorMessage);
+        console.error("Failed to start Normalizer Worker:", errorMessage);
         process.exit(1);
     }
 })();
@@ -35,8 +35,8 @@ process.on('SIGTERM', async () => {
 
         await sqsConsumer.stopConsuming();
         await eventProcessor.shutdown();
-        
-        console.log('Normalizer API shutdown completed');
+
+        console.log('Normalizer Worker shutdown completed');
         process.exit(0);
     } catch (error) {
         console.error('Error during shutdown:', error);
@@ -53,8 +53,8 @@ process.on('SIGINT', async () => {
 
         await sqsConsumer.stopConsuming();
         await eventProcessor.shutdown();
-        
-        console.log('Normalizer API shutdown completed');
+
+        console.log('Normalizer Worker shutdown completed');
         process.exit(0);
     } catch (error) {
         console.error('Error during shutdown:', error);

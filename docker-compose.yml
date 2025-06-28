@@ -1,18 +1,18 @@
 services:
 
-  collector:
+  ingestion:
     build:
-      context: ./collector-api
+      context: ./ingestion-api
     ports:
       - "3000:3000"
     env_file:
-      - ./collector-api/.env
+      - ./ingestion-api/.env
 
   normalizer:
     build:
-      context: ./normalizer-api
+      context: ./normalizer-worker
     env_file:
-      - ./normalizer-api/.env
+      - ./normalizer-worker/.env
 
   postgres:
     image: postgres:15
@@ -24,7 +24,7 @@ services:
       - "5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
-      - ./normalizer-api/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+      - ./normalizer-worker/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
 
   mongodb:
     image: mongo:6

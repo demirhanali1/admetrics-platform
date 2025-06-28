@@ -14,7 +14,7 @@ process.setMaxListeners(0);
 process.env.UV_THREADPOOL_SIZE = '64';
 
 const server = app.listen(port, () => {
-    console.log(`Collector API starting on port ${port} with high-throughput optimizations`);
+    console.log(`Ingestion API starting on port ${port} with high-throughput optimizations`);
     console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
     console.log(`Node.js version: ${process.version}`);
     console.log(`Memory: ${process.memoryUsage().heapUsed / 1024 / 1024} MB`);
