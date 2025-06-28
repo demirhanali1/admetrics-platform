@@ -21,19 +21,17 @@ export class MongoDBService implements DatabaseService {
     }, {
       timestamps: true,
       collection: 'raw_events',
-      // High-performance optimizations for 100M events/day
-      autoIndex: false, // Disable automatic index creation
-      bufferCommands: false, // Disable mongoose buffering
-      // Optimize for write performance
-      writeConcern: { w: 1, j: false }, // Don't wait for journal commit
-      // Disable validation for performance
+      // Performans optimizasyonu
+      autoIndex: false,
+      bufferCommands: false,
+      // yazma optimizasyonu
+      writeConcern: { w: 1, j: false },
       validateBeforeSave: false,
     });
 
     this.RawEventModel = mongoose.models.RawEvent || mongoose.model<RawEvent>('RawEvent', rawEventSchema);
   }
 
-  // Singleton pattern for connection reuse
   static getInstance(): MongoDBService {
     if (!MongoDBService.instance) {
       MongoDBService.instance = new MongoDBService();
@@ -46,33 +44,24 @@ export class MongoDBService implements DatabaseService {
 
     try {
       const config = Config.getInstance().getConfig();
-      
-      // High-performance connection pooling for 100M events/day
+
       await mongoose.connect(this.mongoUri, {
-        // Connection pool settings optimized for high throughput
-        maxPoolSize: 100, // Much larger pool for high concurrency
-        minPoolSize: 20,  // More minimum connections
-        maxIdleTimeMS: 60000, // Longer idle timeout
-        serverSelectionTimeoutMS: 10000, // Longer server selection timeout
-        socketTimeoutMS: 60000, // Longer socket timeout
-        connectTimeoutMS: 15000, // Longer connection timeout
-        // Write concern optimized for performance
+        maxPoolSize: 100,
+        minPoolSize: 20,
+        maxIdleTimeMS: 60000,
+        serverSelectionTimeoutMS: 10000,
+        socketTimeoutMS: 60000,
+        connectTimeoutMS: 15000,
         writeConcern: {
-          w: 1, // Wait for primary acknowledgment only
-          j: false, // Don't wait for journal commit
-          wtimeout: 5000, // 5 second timeout
+          w: 1,
+          j: false,
+          wtimeout: 5000,
         },
-        // Read preference
         readPreference: 'primary',
-        // Retry writes
         retryWrites: true,
-        // Buffer commands
         bufferCommands: false,
-        // Performance optimizations
-        maxConnecting: 10, // Limit concurrent connection attempts
-        // Disable heartbeat for performance
+        maxConnecting: 10,
         heartbeatFrequencyMS: 30000,
-        // Optimize for bulk operations
         directConnection: false,
       });
 
@@ -97,13 +86,11 @@ export class MongoDBService implements DatabaseService {
     }
   }
 
-  // Get connection pool status for monitoring
   getConnectionPoolStatus() {
     if (!this.isConnected) {
       return { connected: false, poolSize: 0, activeConnections: 0 };
     }
 
-    // Use mongoose.connections for pool info
     const poolSize = mongoose.connections.length;
     const activeConnections = mongoose.connections.filter(conn => conn.readyState === 1).length;
     const connection = mongoose.connection;
@@ -141,27 +128,24 @@ export class MongoDBService implements DatabaseService {
     }
   }
 
-  // High-performance batch save for 100M events/day
   async saveRawEvents(events: RawEvent[]): Promise<DatabaseResult[]> {
     try {
       await this.connect();
 
-      // Use insertMany with optimized options for maximum performance
       const rawEvents = events.map(event => ({
         ...event,
         receivedAt: new Date()
       }));
 
-      // Use large batch size with optimized options
-      const batchSize = 5000; // Optimal batch size for MongoDB
+      const batchSize = 5000;
       const results: DatabaseResult[] = [];
 
       for (let i = 0; i < rawEvents.length; i += batchSize) {
         const batch = rawEvents.slice(i, i + batchSize);
-        
+
         const savedEvents = await this.RawEventModel.insertMany(batch, {
-          ordered: false, // Continue inserting even if some documents fail
-          lean: true, // Return plain JavaScript objects instead of Mongoose documents
+          ordered: false,
+          lean: true,
         });
 
         results.push(...savedEvents.map(event => ({
@@ -182,20 +166,17 @@ export class MongoDBService implements DatabaseService {
     }
   }
 
-  // Ultra-fast bulk insert using native MongoDB driver for maximum performance
   async bulkInsertRawEvents(events: RawEvent[]): Promise<DatabaseResult[]> {
     try {
       await this.connect();
 
-      // Get native MongoDB collection for maximum performance
       const collection = mongoose.connection.db.collection('raw_events');
-      
+
       const documents = events.map(event => ({
         ...event,
         receivedAt: new Date()
       }));
 
-      // Use bulk operations for maximum performance
       const bulkOps = documents.map(doc => ({
         insertOne: { document: doc }
       }));
@@ -221,7 +202,6 @@ export class MongoDBService implements DatabaseService {
   }
 
   async saveNormalizedEvent(): Promise<DatabaseResult> {
-    // MongoDB service doesn't handle normalized events
     return {
       success: false,
       error: 'Normalized events are not supported in MongoDB service'

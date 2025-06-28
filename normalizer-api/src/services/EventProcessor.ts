@@ -16,7 +16,6 @@ export class EventProcessorService implements IEventProcessor {
   private maxConcurrentBatches = 5; // Process multiple batches concurrently
 
   constructor() {
-    // Use singleton instances for connection reuse
     this.mongoService = MongoDBService.getInstance();
     this.postgresService = PostgreSQLService.getInstance();
     this.normalizerFactory = new NormalizerFactory();
@@ -25,13 +24,12 @@ export class EventProcessorService implements IEventProcessor {
   async initialize(): Promise<void> {
     try {
       console.log('Initializing EventProcessor for high-throughput processing...');
-      
-      // Connect to databases concurrently
+
       await Promise.all([
         this.mongoService.connect(),
         this.postgresService.connect()
       ]);
-      
+
       console.log('EventProcessor initialized successfully');
     } catch (error) {
       console.error('Failed to initialize EventProcessor:', error);
@@ -42,28 +40,23 @@ export class EventProcessorService implements IEventProcessor {
   async processEvent(event: RawEvent): Promise<boolean> {
     try {
       const startTime = Date.now();
-      
-      // Add event to batch
+
       this.eventBatch.push(event);
-      
-      // Process batch if it reaches the batch size
+
       if (this.eventBatch.length >= this.batchSize) {
-        // Process batch asynchronously to avoid blocking
         const batchPromise = this.processBatch();
         this.processingQueue.push(batchPromise);
-        
-        // Clean up completed promises
+
         this.processingQueue = this.processingQueue.filter(p => !p.then);
-        
-        // Limit concurrent batches
+
         if (this.processingQueue.length >= this.maxConcurrentBatches) {
           await Promise.race(this.processingQueue);
         }
       }
-      
+
       this.processedCount++;
       this.logMetrics(startTime);
-      
+
       return true;
     } catch (error) {
       this.errorCount++;
@@ -76,24 +69,22 @@ export class EventProcessorService implements IEventProcessor {
     if (this.eventBatch.length === 0) return;
 
     const batch = [...this.eventBatch];
-    this.eventBatch = []; // Clear the batch
+    this.eventBatch = [];
 
     try {
       const startTime = Date.now();
-      
-      // Save raw events to MongoDB in batch
+
       const mongoService = this.mongoService as any;
       const postgresService = this.postgresService as any;
-      
+
       const rawEventResults = await mongoService.saveRawEvents(batch);
-      
-      // Process and normalize events
+
       const normalizedEvents: NormalizedEvent[] = [];
-      
+
       for (let i = 0; i < batch.length; i++) {
         const event = batch[i];
         const rawResult = rawEventResults[i];
-        
+
         if (rawResult.success) {
           try {
             const normalizer = this.normalizerFactory.createNormalizer(event.source);
@@ -108,20 +99,18 @@ export class EventProcessorService implements IEventProcessor {
           this.errorCount++;
         }
       }
-      
-      // Save normalized events to PostgreSQL in batch
+
       if (normalizedEvents.length > 0) {
         const normalizedResults = await postgresService.saveNormalizedEvents(normalizedEvents);
-        
-        // Count successful saves
+
         const successfulSaves = normalizedResults.filter((result: any) => result.success).length;
         this.processedCount += successfulSaves;
         this.errorCount += (normalizedEvents.length - successfulSaves);
       }
-      
+
       const batchTime = Date.now() - startTime;
       console.log(`Batch processed: ${batch.length} events in ${batchTime}ms`);
-      
+
     } catch (error) {
       console.error('Failed to process batch:', error);
       this.errorCount += batch.length;
@@ -130,8 +119,7 @@ export class EventProcessorService implements IEventProcessor {
 
   async flushBatch(): Promise<void> {
     await this.processBatch();
-    
-    // Wait for all pending batches to complete
+
     if (this.processingQueue.length > 0) {
       await Promise.all(this.processingQueue);
     }
@@ -140,16 +128,14 @@ export class EventProcessorService implements IEventProcessor {
   async shutdown(): Promise<void> {
     try {
       console.log('Shutting down EventProcessor...');
-      
-      // Process any remaining events in batch
+
       await this.flushBatch();
-      
-      // Disconnect from databases concurrently
+
       await Promise.all([
         this.mongoService.disconnect(),
         this.postgresService.disconnect()
       ]);
-      
+
       console.log('EventProcessor shut down successfully');
     } catch (error) {
       console.error('Failed to shutdown EventProcessor:', error);
@@ -160,13 +146,12 @@ export class EventProcessorService implements IEventProcessor {
   private logMetrics(startTime: number): void {
     const now = Date.now();
     const timeSinceLastLog = now - this.lastLogTime;
-    
-    // Log every 1000 events or every 30 seconds for high throughput
+
     if (this.processedCount % 1000 === 0 || timeSinceLastLog >= 30000) {
       const processingTime = now - startTime;
       const successRate = this.getSuccessRate();
       const eventsPerSecond = this.calculateEventsPerSecond();
-      
+
       console.log(`EventProcessor High-Throughput Metrics:
         - Processed: ${this.processedCount.toLocaleString()}
         - Errors: ${this.errorCount.toLocaleString()}
@@ -176,10 +161,9 @@ export class EventProcessorService implements IEventProcessor {
         - Pending Events: ${this.eventBatch.length}
         - Concurrent Batches: ${this.processingQueue.length}
       `);
-      
-      // Log connection pool status
+
       this.logConnectionPoolStatus();
-      
+
       this.lastLogTime = now;
     }
   }
@@ -194,10 +178,10 @@ export class EventProcessorService implements IEventProcessor {
     try {
       const mongoService = this.mongoService as any;
       const postgresService = this.postgresService as any;
-      
+
       const mongoStatus = mongoService.getConnectionPoolStatus();
       const postgresStatus = postgresService.getConnectionPoolStatus();
-      
+
       console.log(`Connection Pool Status:
         - MongoDB: ${mongoStatus.connected ? 'Connected' : 'Disconnected'} (Pool: ${mongoStatus.poolSize}, Active: ${mongoStatus.activeConnections})
         - PostgreSQL: ${postgresStatus.connected ? 'Connected' : 'Disconnected'} (Pool: ${postgresStatus.poolSize}, Active: ${postgresStatus.activeConnections})
@@ -224,9 +208,8 @@ export class EventProcessorService implements IEventProcessor {
     };
   }
 
-  // Configuration methods for runtime tuning
   setBatchSize(size: number): void {
-    this.batchSize = Math.max(100, Math.min(10000, size)); // Limit between 100 and 10000
+    this.batchSize = Math.max(100, Math.min(10000, size));
     console.log(`Batch size updated to: ${this.batchSize}`);
   }
 
@@ -235,7 +218,7 @@ export class EventProcessorService implements IEventProcessor {
   }
 
   setMaxConcurrentBatches(max: number): void {
-    this.maxConcurrentBatches = Math.max(1, Math.min(20, max)); // Limit between 1 and 20
+    this.maxConcurrentBatches = Math.max(1, Math.min(20, max));
     console.log(`Max concurrent batches updated to: ${this.maxConcurrentBatches}`);
   }
 }

@@ -20,36 +20,25 @@ export class PostgreSQLService implements DatabaseService {
       database: config.database.postgres.database,
       entities: [NormalizedEventEntity],
       synchronize: config.app.nodeEnv === 'development',
-      // High-performance connection pooling for 100M events/day
       extra: {
-        // Connection pool settings optimized for high throughput
-        max: 50, // Increased for high concurrency
-        min: 10, // More minimum connections
-        idleTimeoutMillis: 60000, // Longer idle timeout
-        connectionTimeoutMillis: 5000, // Faster connection timeout
-        query_timeout: 30000, // Longer query timeout for batch operations
+        max: 50,
+        min: 10,
+        idleTimeoutMillis: 60000,
+        connectionTimeoutMillis: 5000,
+        query_timeout: 30000,
         statement_timeout: 30000,
-        // SSL for production
         ssl: config.app.nodeEnv === 'production' ? { rejectUnauthorized: false } : false,
-        // Performance optimizations
         application_name: 'normalizer-api',
-        // Disable automatic prepared statements for better performance
         prepare: false,
-        // Optimize for bulk operations
         binary: true,
       },
-      // Larger pool size for high throughput
       poolSize: 50,
-      // Minimal logging for performance
       logging: config.app.nodeEnv === 'development' ? ['error'] : false,
-      // Disable migrations for performance
       migrationsRun: false,
-      // Disable subscribers for performance
       subscribers: [],
     });
   }
 
-  // Singleton pattern for connection reuse
   static getInstance(): PostgreSQLService {
     if (!PostgreSQLService.instance) {
       PostgreSQLService.instance = new PostgreSQLService();
@@ -82,7 +71,6 @@ export class PostgreSQLService implements DatabaseService {
     }
   }
 
-  // Get connection pool status for monitoring
   getConnectionPoolStatus() {
     if (!this.dataSource.isInitialized) {
       return { connected: false, poolSize: 0, activeConnections: 0 };
@@ -136,14 +124,12 @@ export class PostgreSQLService implements DatabaseService {
     }
   }
 
-  // High-performance batch save for 100M events/day
   async saveNormalizedEvents(events: NormalizedEvent[]): Promise<DatabaseResult[]> {
     try {
       if (!this.repository) {
         throw new Error('Database not connected');
       }
 
-      // Use bulk insert for maximum performance
       const entities = events.map((event: NormalizedEvent) => {
         const entity = new NormalizedEventEntity();
         entity.unified_campaign_id = event.unified_campaign_id;
@@ -157,15 +143,14 @@ export class PostgreSQLService implements DatabaseService {
         return entity;
       });
 
-      // Use bulk insert with chunking for large batches
-      const chunkSize = 1000; // Optimal chunk size for PostgreSQL
+      const chunkSize = 1000;
       const results: DatabaseResult[] = [];
 
       for (let i = 0; i < entities.length; i += chunkSize) {
         const chunk = entities.slice(i, i + chunkSize);
-        const savedEvents = await this.repository.save(chunk, { 
+        const savedEvents = await this.repository.save(chunk, {
           chunk: chunkSize,
-          reload: false, // Don't reload entities for performance
+          reload: false,
         });
 
         results.push(...savedEvents.map(event => ({
@@ -186,7 +171,6 @@ export class PostgreSQLService implements DatabaseService {
     }
   }
 
-  // Ultra-fast bulk insert using raw SQL for maximum performance
   async bulkInsertNormalizedEvents(events: NormalizedEvent[]): Promise<DatabaseResult[]> {
     try {
       if (!this.dataSource.isInitialized) {
@@ -198,8 +182,7 @@ export class PostgreSQLService implements DatabaseService {
       await queryRunner.startTransaction();
 
       try {
-        // Prepare bulk insert values
-        const values = events.map(event => 
+        const values = events.map(event =>
           `('${event.unified_campaign_id}', '${event.campaign_name}', '${event.source_platform}', '${event.event_date}', ${event.impressions}, ${event.clicks}, ${event.spend}, ${event.conversions})`
         ).join(',');
 

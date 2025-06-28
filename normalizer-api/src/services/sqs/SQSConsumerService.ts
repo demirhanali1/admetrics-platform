@@ -8,10 +8,10 @@ export class SQSConsumerService implements MessageConsumerService {
   private readonly queueUrl: string;
   private readonly eventProcessor: EventProcessor;
   private isRunning = false;
-  private pollingInterval = 1000; // Reduced to 1 second for higher throughput
-  private maxConcurrentMessages = 50; // Process up to 50 messages concurrently
-  private maxMessagesPerBatch = 10; // SQS limit
-  private processingTimeout = 25000; // 25 seconds timeout
+  private pollingInterval = 1000;
+  private maxConcurrentMessages = 50;
+  private maxMessagesPerBatch = 10;
+  private processingTimeout = 25000;
 
   constructor(eventProcessor: EventProcessor) {
     const config = Config.getInstance().getConfig();
@@ -22,7 +22,7 @@ export class SQSConsumerService implements MessageConsumerService {
         accessKeyId: config.aws.accessKeyId,
         secretAccessKey: config.aws.secretAccessKey,
       },
-      maxAttempts: 3, // Retry failed requests
+      maxAttempts: 3,
     });
 
     this.queueUrl = config.aws.sqsQueueUrl;
@@ -38,8 +38,7 @@ export class SQSConsumerService implements MessageConsumerService {
     this.isRunning = true;
     console.log('Starting SQS consumer with concurrent processing...');
 
-    // Start multiple concurrent consumers
-    const consumerPromises = Array.from({ length: 3 }, (_, i) => 
+    const consumerPromises = Array.from({ length: 3 }, (_, i) =>
       this.consumerLoop(`Consumer-${i + 1}`)
     );
 
@@ -55,31 +54,27 @@ export class SQSConsumerService implements MessageConsumerService {
     while (this.isRunning) {
       try {
         const messages = await this.receiveMessages();
-        
+
         if (messages.length === 0) {
           await this.sleep(this.pollingInterval);
           continue;
         }
 
         console.log(`${consumerName}: Processing ${messages.length} messages concurrently`);
-        
-        // Process messages concurrently with timeout
-        const processingPromises = messages.map(message => 
+
+        const processingPromises = messages.map(message =>
           this.processMessageWithTimeout(message, consumerName)
         );
 
-        // Wait for all messages to be processed
         const results = await Promise.allSettled(processingPromises);
-        
-        // Log results
+
         const successful = results.filter(r => r.status === 'fulfilled').length;
         const failed = results.filter(r => r.status === 'rejected').length;
-        
+
         if (successful > 0 || failed > 0) {
           console.log(`${consumerName}: ${successful} successful, ${failed} failed`);
         }
 
-        // Small delay to prevent overwhelming the system
         await this.sleep(100);
       } catch (error) {
         console.error(`${consumerName}: Error in consumer loop:`, error);
@@ -127,20 +122,19 @@ export class SQSConsumerService implements MessageConsumerService {
       await Promise.race([processingPromise, timeoutPromise]);
     } catch (error) {
       console.error(`${consumerName}: Message ${message.MessageId} failed or timed out:`, error);
-      // Don't delete the message if it failed - let it go back to queue
       throw error;
     }
   }
 
   private async processMessage(message: SQSMessage, consumerName: string): Promise<void> {
     const startTime = Date.now();
-    
+
     try {
       const payload = JSON.parse(message.Body);
       await this.eventProcessor.processEvent(payload);
 
       await this.deleteMessage(message.ReceiptHandle);
-      
+
       const processingTime = Date.now() - startTime;
       console.log(`${consumerName}: Message ${message.MessageId} processed in ${processingTime}ms`);
     } catch (error) {
@@ -168,7 +162,6 @@ export class SQSConsumerService implements MessageConsumerService {
     return new Promise(resolve => setTimeout(resolve, ms));
   }
 
-  // Configuration methods for runtime tuning
   setMaxConcurrentMessages(max: number): void {
     this.maxConcurrentMessages = max;
   }

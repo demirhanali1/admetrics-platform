@@ -14,7 +14,7 @@ export interface NormalizedEvent {
   unified_campaign_id: string;
   campaign_name: string;
   source_platform: string;
-  event_date: string; // ISO format date
+  event_date: string;
   impressions: number;
   clicks: number;
   spend: number;
