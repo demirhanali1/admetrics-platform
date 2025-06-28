@@ -1,11 +1,13 @@
 # Teknoloji
 
 - Node.js
+- Express.js
 - Docker
 - AWS
+- PostgreSQL, TypeORM
+- MongoDB, mongoose
+- SOLID
 - Github Actions
-- PostgreSQL
-- MongoDB
 
 # AWS Bileşenleri
 
