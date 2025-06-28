@@ -52,7 +52,7 @@
 
 ### Teknik Detay
 
-Normalizer API, yüksek trafik altında dahi güvenilir, kararlı ve ölçeklenebilir çalışacak şekilde optimize edilmiştir. Sistemin hedefi, günlük 1 milyondan fazla eventi sorunsuz bir şekilde işleyebilmek, veri tutarlılığını korumak ve SQS kuyruğundaki yükü hızlıca boşaltarak sistemin darboğaza girmesini önlemektir.
+Normalizer API, yüksek trafik altında dahi güvenilir, kararlı ve ölçeklenebilir çalışacak şekilde optimize edilmiştir. Sistemin hedefi, günlük 100 milyon eventi sorunsuz bir şekilde işleyebilmek, veri tutarlılığını korumak ve SQS kuyruğundaki yükü hızlıca boşaltarak sistemin darboğaza girmesini önlemektir.
 
 **Yapılan başlıca performans iyileştirmeleri şunlardır**
 
