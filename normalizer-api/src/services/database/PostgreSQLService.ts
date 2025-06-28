@@ -1,11 +1,11 @@
 import { DataSource, Repository } from 'typeorm';
 import { DatabaseService, DatabaseResult, NormalizedEvent } from '../../types/Event';
 import { Config } from '../../config/Config';
-import { NormalizedEventEntity } from '../../entities/NormalizedEvent';
+import { NormalizedEvent as NormalizedEventEntity } from '../../entity/NormalizedEvent';
 
 export class PostgreSQLService implements DatabaseService {
   private dataSource: DataSource;
-  private repository: Repository<NormalizedEventEntity>;
+  private repository!: Repository<NormalizedEventEntity>;
 
   constructor() {
     const config = Config.getInstance().getConfig();
@@ -57,16 +57,15 @@ export class PostgreSQLService implements DatabaseService {
         throw new Error('Database not connected');
       }
 
-      const normalizedEventEntity = new NormalizedEventEntity({
-        unified_campaign_id: event.unified_campaign_id,
-        campaign_name: event.campaign_name,
-        source_platform: event.source_platform,
-        event_date: event.event_date,
-        impressions: event.impressions,
-        clicks: event.clicks,
-        spend: event.spend,
-        conversions: event.conversions,
-      });
+      const normalizedEventEntity = new NormalizedEventEntity();
+      normalizedEventEntity.unified_campaign_id = event.unified_campaign_id;
+      normalizedEventEntity.campaign_name = event.campaign_name;
+      normalizedEventEntity.source_platform = event.source_platform;
+      normalizedEventEntity.event_date = event.event_date;
+      normalizedEventEntity.impressions = event.impressions;
+      normalizedEventEntity.clicks = event.clicks;
+      normalizedEventEntity.spend = event.spend;
+      normalizedEventEntity.conversions = event.conversions;
 
       const savedEvent = await this.repository.save(normalizedEventEntity);
 

@@ -102,7 +102,7 @@ export class Config {
   }
 
   private getPostgresHost(): string {
-    return process.env.POSTGRES_HOST || 'localhost';
+    return process.env.POSTGRES_URI || 'localhost';
   }
 
   private getPostgresPort(): number {
@@ -141,4 +141,4 @@ export class Config {
   private getLogLevel(): string {
     return process.env.LOG_LEVEL || 'info';
   }
-} 
+}

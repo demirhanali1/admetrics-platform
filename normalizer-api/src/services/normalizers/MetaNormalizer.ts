@@ -2,27 +2,28 @@ import { EventNormalizer, NormalizedEvent, EventPayload } from '../../types/Even
 
 export class MetaNormalizer implements EventNormalizer {
   normalize(payload: EventPayload): NormalizedEvent {
-    const campaign = payload.campaign as Record<string, unknown>;
-    const metrics = payload.metrics as Record<string, unknown>;
+    // Meta payload structure
+    const campaignId = payload.campaign_id as string;
+    const campaignName = payload.campaign_name as string;
+    const insights = payload.insights as Record<string, unknown>;
 
-    if (!campaign || !metrics) {
-      throw new Error('Invalid Meta payload structure: missing campaign or metrics');
+    if (!campaignId) {
+      throw new Error('Invalid Meta payload: missing campaign_id');
     }
 
-    const campaignId = campaign.id as string;
-    if (!campaignId) {
-      throw new Error('Invalid Meta payload: missing campaign.id');
+    if (!insights) {
+      throw new Error('Invalid Meta payload: missing insights');
     }
 
     return {
       unified_campaign_id: campaignId,
-      campaign_name: (campaign.name as string) || 'Unknown Campaign',
+      campaign_name: campaignName || 'Unknown Campaign',
       source_platform: 'meta',
-      event_date: (metrics.date as string) || new Date().toISOString().split('T')[0],
-      impressions: Number(metrics.impressions) || 0,
-      clicks: Number(metrics.clicks) || 0,
-      spend: Number(metrics.spend) || 0,
-      conversions: Number(metrics.conversions) || 0
+      event_date: (payload.date_start as string) || new Date().toISOString().split('T')[0],
+      impressions: Number(insights.impressions) || 0,
+      clicks: Number(insights.clicks) || 0,
+      spend: Number(insights.spend) || 0,
+      conversions: Number(insights.conversions) || 0
     };
   }
 } 
