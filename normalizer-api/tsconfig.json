@@ -8,11 +8,12 @@
     "esModuleInterop": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
+    "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
-    "experimentalDecorators": true
+    "resolveJsonModule": true
   },
   "include": [
-    "normalizer-api"
+    "src/**/*"
   ],
   "exclude": ["node_modules", "dist"]
 }
