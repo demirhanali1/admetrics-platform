@@ -18,7 +18,7 @@
 
 # Mikroservisler
 
-## 1. Collector Api
+## 1. Ingestion Api
 
 - Bu servisin tek görevi, HTTP POST ile gelen işlenmemiş (raw) data'yı alarak AWS SQS kuyruğuna push etmektir. Herhangi bir ek işlem yapmaz. Bu sayede gelen verilerin yüksek performansla sisteme alınması, durability ve buffering sorunlarının yaşanmaması ve %99 uptime oranının yakalanması hedeflenmiştir.
 - Servis, AWS EC2 üzerinde koşmaktadır ve otomatik ölçeklenebilir (auto-scale) yapıdadır. Şu anda 1 CPU ve 4 GB RAM kaynaklarına sahiptir.
@@ -52,7 +52,7 @@
 - Max listeners limiti kaldırıldı
 - Memory usage monitoring yapılıyor
 
-## 2. Normalizer Api
+## 2. Normalizer Worker
 
 - Bu servisin temel görevi, SQS kuyruğundan gelen raw (ham) verileri işleyip normalize etmek ve normalize edilmiş verileri kalıcı olarak kaydetmektir. Böylece farklı kaynaklardan gelen veriler sistemde standart bir yapıya dönüştürülerek sonraki analiz aşamaları için hazır hale getirilmiş olur.
 
@@ -202,3 +202,8 @@ Hesaplanması Gereken Metrikler
 
    Conversion Rate, Revenue Per Click, Revenue Per Impression
 
+# Loglama ve Monitoring Stratejileri
+
+## Genel Yaklaşım
+
+Mikroservis mimarisinde her servis (collector-api, normalizer-worker, diğer mikroservisler) ayrı EC2 instance'larında çalışacak. Bu durumda merkezi loglama ve monitoring kritik önem taşıyor.
