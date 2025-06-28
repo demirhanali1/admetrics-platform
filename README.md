@@ -19,7 +19,7 @@
 
 # Mikroservisler
 
-## 1. Ingestion Api
+## 1. Collector Api
 
 - Bu servisin tek görevi, HTTP POST ile gelen işlenmemiş (raw) data'yı alarak AWS SQS kuyruğuna push etmektir. Herhangi bir ek işlem yapmaz. Bu sayede gelen verilerin yüksek performansla sisteme alınması, durability ve buffering sorunlarının yaşanmaması ve %99 uptime oranının yakalanması hedeflenmiştir.
 - Servis, AWS EC2 üzerinde koşmaktadır ve otomatik ölçeklenebilir (auto-scale) yapıdadır. Şu anda 1 CPU ve 4 GB RAM kaynaklarına sahiptir.
@@ -49,6 +49,71 @@
 - Mesajı kaynağına (örneğin Meta veya Google) göre normalize eder.
 
 - Ham veriyi MongoDB’ye, normalize veriyi PostgreSQL’e kaydeder.
+
+### Teknik Detay
+
+Normalizer API, yüksek trafik altında dahi güvenilir, kararlı ve ölçeklenebilir çalışacak şekilde optimize edilmiştir. Sistemin hedefi, günlük 1 milyondan fazla eventi sorunsuz bir şekilde işleyebilmek, veri tutarlılığını korumak ve SQS kuyruğundaki yükü hızlıca boşaltarak sistemin darboğaza girmesini önlemektir.
+
+**Yapılan başlıca performans iyileştirmeleri şunlardır**
+
+**Concurrent Processing Architecture (Eşzamanlı İşleme Mimarisi)**
+
+3 adet paralel consumer loop ile eşzamanlı işleme yapılıyor.
+
+```ts
+Apply
+const consumerPromises = Array.from({ length: 3 }, (_, i) =>
+this.consumerLoop(`Consumer-${i + 1}`)
+);
+await Promise.all(consumerPromises);
+```
+
+**Message Processing Pipeline (Mesaj İşleme Pipeline'ı)**
+
+Concurrent Message Processing:
+  - Promise.allSettled() kullanarak mesajlar paralel işleniyor
+  - Bir mesajın başarısızlığı diğerlerini etkilemiyor
+  - Her mesaj için ayrı promise oluşturuluyor
+
+Timeout Protection:
+  - Her mesaj için 25 saniye timeout süresi
+  - Hanging process'leri önliyor
+  - Sistem kaynaklarının bloke olmasını engelliyor
+
+  Batch Processing:
+  - SQS limiti olan 10 mesaj per batch
+  - Network overhead'i azaltıyor
+  - AWS API çağrı sayısını optimize ediyor
+
+**Performans Optimizasyonu**
+```
+private pollingInterval = 1000;        // 1 saniye polling aralığı
+private maxConcurrentMessages = 50;    // Maksimum eşzamanlı mesaj sayısı
+private processingTimeout = 25000;     // 25 saniye işleme timeout'u
+private maxMessagesPerBatch = 10;  
+```
+
+**Retry Mekanizması**
+```ts
+this.sqsClient = new SQSClient({
+  region: this.config.awsRegion,
+  maxAttempts: 3,  // Başarısız istekler için otomatik retry
+});
+```
+
+**Error İzolasyon**
+```ts
+const results = await Promise.allSettled(
+    messages.map(message => this.processMessageWithTimeout(message))
+);
+
+// Her mesaj için ayrı hata yönetimi
+results.forEach((result, index) => {
+    if (result.status === 'rejected') {
+        // Hata loglanıyor ama diğer mesajlar etkilenmiyor
+    }
+});
+```
 
 # Veritabanı Mimarisi
 
