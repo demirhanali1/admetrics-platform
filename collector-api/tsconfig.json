@@ -7,10 +7,14 @@
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
-    "forceConsistentCasingInFileNames": true
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true,
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true
   },
   "include": [
-    "collector-api"
+    "src/**/*"
   ],
   "exclude": ["node_modules", "dist"]
 }
