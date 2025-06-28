@@ -32,6 +32,27 @@
 - Bu veriyi SQS queue’ya atar.
 - 200 OK döner.
 
+### SQS Performans Optimizasyonu
+
+- Mesajları tek tek göndermek yerine batch halinde gönderiyoruz
+- SQS limiti olan 10 mesaj per batch kullanıyoruz
+- 1 saniye flush interval ile otomatik batch gönderimi
+- Network overhead'i %90 azaltıyor
+
+### Express.js Optimizasyonu
+
+- Compression middleware (response boyutunu küçültür)
+- Rate limiting (10,000 request/dakika per IP)
+- Request timeout 30 saniye
+- Gereksiz middleware'ler kapatıldı (x-powered-by, etag)
+- JSON parsing limiti 10MB'a çıkarıldı
+
+### Node.js Optimizasyonu
+
+- Thread pool size 64'e çıkarıldı
+- Max listeners limiti kaldırıldı
+- Memory usage monitoring
+
 ## 2. Normalizer Api
 
 - Bu servisin temel görevi, SQS kuyruğundan gelen raw (ham) verileri işleyip normalize etmek ve normalize edilmiş verileri kalıcı olarak kaydetmektir. Böylece farklı kaynaklardan gelen veriler sistemde standart bir yapıya dönüştürülerek sonraki analiz aşamaları için hazır hale getirilmiş olur.
