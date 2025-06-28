@@ -1,5 +1,5 @@
 import { config } from "dotenv";
-import {startSqsConsumer} from "./services/sqsConsumer";
+import {startSqsConsumer} from "./services/sqs/sqsConsumer";
 
 config();
 
