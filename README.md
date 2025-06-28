@@ -3,26 +3,23 @@
 - Typescript
 - Node.js, Express.js
 - Docker
-- AWS
+- AWS, SQS
 - PostgreSQL, TypeORM
 - MongoDB, mongoose
 - SOLID Prensipleri
 
-# AWS Bileşenleri
-
-## SQS
-- AWS tarafından fully managed & auto-scaled yapıdadır. Anlık olarak binlerce mesajı kuyruğa yazabilir.
+# SQS
+- AWS tarafından fully managed & auto-scaled yapıdadır. Anlık olarak yüzbinlerce mesajı kuyruğa yazabilir.
 - Fifo kullanılmadı çünkü event'lar zamandan bağımsızdır. Mesajların öncelik sırası yok.
 - Şu anda şifreleme default olarak in-transit yani TLS ile yapılmaktadır. Ancak gerçek projede mesaj saklanırken at-rest ile şifrelenmesi seçilebilir, ek maliyet getirir.
 - DLQ kullanılmadı ancak mesaj consume edilirken bir hata oluşursa, hatalı mesajların aktarılması için gerçek dünyada kullanılabilir.
 
 # Mikroservisler
 
-## 1. Collector Api
+## 1. Ingestion Api
 
 - Bu servisin tek görevi, HTTP POST ile gelen işlenmemiş (raw) data'yı alarak AWS SQS kuyruğuna push etmektir. Herhangi bir ek işlem yapmaz. Bu sayede gelen verilerin yüksek performansla sisteme alınması, durability ve buffering sorunlarının yaşanmaması ve %99 uptime oranının yakalanması hedeflenmiştir.
-- Servis, AWS EC2 üzerinde koşmaktadır ve otomatik ölçeklenebilir (auto-scale) yapıdadır. Şu anda 1 CPU ve 4 GB RAM kaynaklarına sahiptir.
-- Apache JMeter ile yapılan yük testlerinde anlık 10.000 istek (request) başarıyla işlenmiştir. %80 CPU kullanım oranı sınır olarak belirlenmiştir. Bu sınır aşıldığında servis, load balancer aracılığıyla otomatik olarak ölçeklenir ve yeni istekleri karşılamaya devam eder. Yük normale döndüğünde ise tek servis olarak çalışmaya devam eder (gerçek dünyada birden çok replika koşabilir).
+- Servis, AWS EC2 üzerinde koşacaktır ve otomatik ölçeklenebilir (auto-scale) yapıda olacaktır. %80 CPU kullanım oranı sınır olarak belirlenebilir. Bu sınır aşıldığında servis, load balancer aracılığıyla otomatik olarak ölçeklenir ve yeni istekleri karşılamaya devam eder. Yük normale döndüğünde ise default servis sayısı olarak yaşamaya devam eder.
 
 Özetle iş akışı:
 
@@ -52,7 +49,7 @@
 - Max listeners limiti kaldırıldı
 - Memory usage monitoring yapılıyor
 
-## 2. Normalizer Api
+## 2. Normalizer Worker
 
 - Bu servisin temel görevi, SQS kuyruğundan gelen raw (ham) verileri işleyip normalize etmek ve normalize edilmiş verileri kalıcı olarak kaydetmektir. Böylece farklı kaynaklardan gelen veriler sistemde standart bir yapıya dönüştürülerek sonraki analiz aşamaları için hazır hale getirilmiş olur.
 
@@ -76,7 +73,7 @@ Normalizer API, yüksek trafik altında dahi güvenilir, kararlı ve ölçeklene
 
 **Concurrent Processing Architecture (Eşzamanlı İşleme Mimarisi)**
 
-3 adet paralel consumer loop ile eşzamanlı işleme yapılıyor.
+3 adet paralel consumer (sistem gücüne göre artırılabilir) loop ile eşzamanlı işleme yapılıyor.
 
 ```ts
 Apply
@@ -95,11 +92,11 @@ Concurrent Message Processing:
 
 Timeout Protection:
   - Her mesaj için 25 saniye timeout süresi
-  - Hanging process'leri önliyor
+  - Hanging process'leri önlüyor
   - Sistem kaynaklarının bloke olmasını engelliyor
 
   Batch Processing:
-  - SQS limiti olan 10 mesaj per batch
+  - SQS limiti olan 10 mesaj batch sayımız
   - Network overhead'i azaltıyor
   - AWS API çağrı sayısını optimize ediyor
 
@@ -211,7 +208,7 @@ Mikroservis mimarisinde her servis (ingestion-api, normalizer-worker, diğer ser
 ## AWS Loglama Servisleri
 1. CloudWatch Logs (Ana Loglama Platformu)
 
-   Kullanım: Tüm uygulama loglarının merkezi toplanması
+   Kullanım: Tüm uygulama loglarının merkezi yerde toplanması
 
    Avantajlar:
    - Otomatik log gruplandırma
