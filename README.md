@@ -19,7 +19,7 @@
 
 # Mikroservisler
 
-## 1. Ingestion Api (Main Servis)
+## 1. Ingestion Api
 
 - Bu servisin tek görevi, HTTP POST ile gelen işlenmemiş (raw) data'yı alarak AWS SQS kuyruğuna push etmektir. Herhangi bir ek işlem yapmaz. Bu sayede gelen verilerin yüksek performansla sisteme alınması, durability ve buffering sorunlarının yaşanmaması ve %99 uptime oranının yakalanması hedeflenmiştir.
 - Servis, AWS EC2 üzerinde koşmaktadır ve otomatik ölçeklenebilir (auto-scale) yapıdadır. Şu anda 1 CPU ve 4 GB RAM kaynaklarına sahiptir.
@@ -31,6 +31,24 @@
 - Payload’ı doğrular.
 - Bu veriyi SQS queue’ya atar.
 - 200 OK döner.
+
+## 2. Normalizer Api
+
+- Bu servisin temel görevi, SQS kuyruğundan gelen raw (ham) verileri işleyip normalize etmek ve normalize edilmiş verileri kalıcı olarak kaydetmektir. Böylece farklı kaynaklardan gelen veriler sistemde standart bir yapıya dönüştürülerek sonraki analiz aşamaları için hazır hale getirilmiş olur.
+
+- Uygulama TypeScript, TypeORM ve Mongoose kullanılarak geliştirilmiştir. PostgreSQL üzerinde normalize edilmiş veriler saklanırken, MongoDB’de orijinal (ham) veriler arşivlenir.
+
+- Servis %99.9 uptime hedefiyle çalışmakta olup, arka planda kesintisiz olarak kuyruktaki mesajları dinler ve işler.
+
+Özetle iş akışı:
+
+- AWS SQS kuyruğunu sürekli olarak dinler.
+
+- Kuyruktan bir raw event mesajı çeker.
+
+- Mesajı kaynağına (örneğin Meta veya Google) göre normalize eder.
+
+- Ham veriyi MongoDB’ye, normalize veriyi PostgreSQL’e kaydeder.
 
 # Veritabanı Mimarisi
 
