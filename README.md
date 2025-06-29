@@ -8,6 +8,37 @@
 - MongoDB, mongoose
 - SOLID Prensipleri
 
+# Kurulum Talimatları
+
+Projeyi ayağa kaldırmak için aşağıdaki komutu çalıştırmanız yeterlidir:
+
+```
+docker compose up -d --build
+```
+
+Terminalde curl ile aşağıdaki örnek request'i gönderebilirsiniz:
+
+```
+curl -X POST http://localhost:3000/events \
+  -H "Content-Type: application/json" \
+  -d '{
+    "source": "meta",
+    "payload": {
+      "campaign_id": "meta_12345",
+      "campaign_name": "Summer Sale 2024",
+      "ad_set_id": "meta_67890",
+      "date_start": "2024-05-20",
+      "date_stop": "2024-05-20",
+      "insights": {
+        "impressions": 15000,
+        "clicks": 350,
+        "spend": 50.75,
+        "conversions": 12
+      }
+    }
+  }'
+```
+
 # SQS
 - AWS tarafından fully managed & auto-scaled yapıdadır. Anlık olarak yüzbinlerce mesajı kuyruğa yazabilir.
 - Fifo kullanılmadı çünkü event'lar zamandan bağımsızdır. Mesajların öncelik sırası yok.
@@ -30,8 +61,8 @@
 
 ### SQS Performans Optimizasyonu
 
-- Mesajları tek tek göndermek yerine batch halinde gönderiyoruz
-- SQS limiti olan 10 mesaj per batch kullanıyoruz
+- Mesajları tek tek göndermek yerine batch halinde gönderiyoruz (memory'de saklanıyor)
+- SQS limiti olan 10, mesaj per batch kullanıyoruz
 - 1 saniye flush interval ile otomatik batch gönderimi yapılıyor
 - Network overhead'i %90 azaltıyor
 
