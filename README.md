@@ -61,7 +61,7 @@ curl -X POST http://localhost:3000/events \
 
 ### SQS Performans Optimizasyonu
 
-- Mesajları tek tek göndermek yerine batch halinde gönderiyoruz (memory'de saklanıyor)
+- Mesajları tek tek göndermek yerine batch halinde gönderiyoruz (ram'de saklanıyor)
 - SQS limiti olan 10, mesaj per batch kullanıyoruz
 - 1 saniye flush interval ile otomatik batch gönderimi yapılıyor
 - Network overhead'i %90 azaltıyor
