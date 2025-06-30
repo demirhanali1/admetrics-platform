@@ -18,7 +18,6 @@
   * [Genel Yaklaşım](#genel-yaklaşım)
   * [AWS Loglama Servisleri](#aws-loglama-servisleri)
   * [Log Mimarisi](#log-mimarisi)
-* [Diagram](#diagram)
 <!-- TOC -->
 
 # Teknoloji
@@ -30,6 +29,8 @@
 - PostgreSQL, TypeORM
 - MongoDB, mongoose
 - SOLID Prensipleri
+
+[Sistem Diagramı](./diagram1.png)
 
 # Kurulum Talimatları
 
@@ -298,7 +299,3 @@ Mikroservis mimarisinde her servis (ingestion-api, normalizer-worker, diğer ser
 4. Business Logs (Custom → CloudWatch)
    - Event processing metrics
    - SQS message handling
-
-# Diagram
-
-![Diagram](./diagram.png)
