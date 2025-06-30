@@ -1,3 +1,26 @@
+<!-- TOC -->
+* [Teknoloji](#teknoloji)
+* [Kurulum Talimatları](#kurulum-talimatları)
+* [SQS](#sqs)
+* [Mikroservisler](#mikroservisler)
+  * [1. Ingestion Api](#1-ingestion-api)
+    * [SQS Performans Optimizasyonu](#sqs-performans-optimizasyonu)
+    * [Express.js Optimizasyonu](#expressjs-optimizasyonu)
+    * [Node.js Optimizasyonu](#nodejs-optimizasyonu)
+  * [2. Normalizer Worker](#2-normalizer-worker)
+    * [SQS Performans Optimizasyonu](#sqs-performans-optimizasyonu-1)
+    * [PostgreSQL Performans Optimizasyonu](#postgresql-performans-optimizasyonu)
+    * [MongoDB Performans Optimizasyonu](#mongodb-performans-optimizasyonu)
+    * [EventProcessor Optimizasyonu](#eventprocessor-optimizasyonu)
+* [Veritabanı Mimarisi](#veritabanı-mimarisi)
+* [Metrik Hesaplama Stratejileri](#metrik-hesaplama-stratejileri)
+* [Loglama ve Monitoring Stratejisi](#loglama-ve-monitoring-stratejisi)
+  * [Genel Yaklaşım](#genel-yaklaşım)
+  * [AWS Loglama Servisleri](#aws-loglama-servisleri)
+  * [Log Mimarisi](#log-mimarisi)
+* [Diagram](#diagram)
+<!-- TOC -->
+
 # Teknoloji
 
 - Typescript
@@ -276,5 +299,6 @@ Mikroservis mimarisinde her servis (ingestion-api, normalizer-worker, diğer ser
    - Event processing metrics
    - SQS message handling
 
+# Diagram
 
-
+![Diagram](./diagram.png)
