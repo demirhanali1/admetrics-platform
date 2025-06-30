@@ -30,7 +30,7 @@
 - MongoDB, mongoose
 - SOLID Prensipleri
 
-[Sistem Diagramı](./diagram1.png)
+[Sistem Diagramı](https://raw.githubusercontent.com/demirhanali1/admetrics-platform/refs/heads/main/diagram1.png)
 
 # Kurulum Talimatları
 
